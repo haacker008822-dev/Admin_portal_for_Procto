@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamGuard — Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080C14;--surface:#0D1420;--card:#111827;--card2:#19243A;
+  --b1:#1E2D45;--b2:#243350;
+  --accent:#3B82F6;--accent2:#2563EB;--glow:rgba(59,130,246,0.15);
+  --green:#10B981;--green-bg:rgba(16,185,129,0.12);
+  --yellow:#F59E0B;--yellow-bg:rgba(245,158,11,0.12);
+  --red:#EF4444;--red-bg:rgba(239,68,68,0.12);
+  --text:#E8F0FE;--sub:#7A8BAA;--muted:#3D4F68;--white:#fff;
+}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+
+/* ── Screens ── */
+.screen{display:none}
+.screen.on{display:flex}
+
+/* ── Config screen ── */
+#sc-config{min-height:100vh;align-items:center;justify-content:center}
+
+/* ── Auth screen (sign in / sign up tabs) ── */
+#sc-auth{min-height:100vh;align-items:stretch}
+.auth-left{width:420px;background:linear-gradient(160deg,#0D1B3E,#060D1C);display:flex;flex-direction:column;justify-content:center;padding:60px 48px;flex-shrink:0}
+.auth-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
+.auth-card{background:var(--card);border:1px solid var(--b1);border-radius:16px;padding:36px;width:100%;max-width:460px}
+
+/* Tab switcher */
+.tab-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);border-radius:10px;padding:4px;margin-bottom:28px}
+.tab-switch button{padding:10px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--sub);transition:all .2s}
+.tab-switch button.on{background:var(--accent);color:var(--white)}
+.tab-switch button:not(.on):hover{background:var(--card2);color:var(--text)}
+
+.form-panel{display:none}.form-panel.on{display:block}
+
+/* ── Dashboard ── */
+#sc-dash{flex-direction:row;min-height:100vh}
+.sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--b1);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0}
+.brand{padding:20px;border-bottom:1px solid var(--b1)}
+.brand h2{font-size:15px;font-weight:700;color:var(--white)}
+.brand small{color:var(--muted);font-size:11px}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-btn{display:block;width:100%;text-align:left;padding:12px 20px;background:none;border:none;border-left:3px solid transparent;color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.nav-btn:hover{background:var(--card);color:var(--text)}
+.nav-btn.on{color:var(--accent);border-left-color:var(--accent);background:var(--glow)}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--b1)}
+.sb-user{font-size:12px;color:var(--green);margin-bottom:8px}
+.main{margin-left:220px;padding:32px;flex:1;min-height:100vh}
+.tab{display:none}.tab.on{display:block}
+.page-title{font-size:20px;font-weight:700;color:var(--white);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--sub);margin-bottom:24px}
+
+/* ── Form elements ── */
+.box{background:var(--card);border:1px solid var(--b1);border-radius:16px;padding:40px;width:480px}
+.box h1{font-size:22px;font-weight:700;color:var(--white);margin-bottom:6px}
+.box .sub{color:var(--sub);font-size:13px;margin-bottom:26px}
+label{display:block;font-size:11px;font-weight:600;color:var(--sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+input{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--b1);border-radius:8px;padding:10px 13px;font-size:13px;margin-bottom:4px;font-family:inherit;transition:border .15s}
+input:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:11px;color:var(--muted);margin-bottom:14px}
+.mg{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-title{font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px}
+.form-sub{font-size:13px;color:var(--sub);margin-bottom:22px}
+
+/* ── Buttons ── */
+.btn{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--b2);background:var(--card2);color:var(--text);font-family:inherit;transition:all .15s}
+.btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:var(--white);border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-full{width:100%;padding:12px;font-size:14px}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.btn-danger:hover{background:var(--red);color:var(--white)}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.btn-success:hover{background:var(--green);color:var(--white)}
+.btn-link{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;padding:4px}
+.btn-link:hover{color:var(--accent)}
+
+/* ── Alerts ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;display:none;white-space:pre-line}
+.alert.on{display:block}
+.a-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.a-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.a-warn{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow)}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:var(--card2);border:1px solid var(--b2);border-radius:10px;padding:18px}
+.stat-num{font-size:28px;font-weight:700;margin-bottom:4px}
+.stat-lbl{font-size:12px;color:var(--sub)}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--b1);border-radius:12px;padding:22px;margin-bottom:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-title{font-size:14px;font-weight:600;color:var(--white)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--sub);border-bottom:1px solid var(--b1);text-transform:uppercase;letter-spacing:.4px}
+td{padding:11px 12px;border-bottom:1px solid var(--b1);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.empty{text-align:center;padding:36px;color:var(--muted)}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.b-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.b-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.b-blue{background:var(--glow);color:var(--accent);border:1px solid var(--accent)}
+
+code{font-family:Consolas,monospace;font-size:12px;background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--accent)}
+pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(--sub);margin-top:12px;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;display:none}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — SUPABASE CONFIG (one-time)
+     ══════════════════════════════════════════ -->
+<div id="sc-config" class="screen">
+  <div class="box">
+    <div style="font-size:36px;margin-bottom:14px">🛡</div>
+    <h1>ExamGuard Admin</h1>
+    <p class="sub">Connect your Supabase database. Only needed once — saved automatically.</p>
+
+    <div class="mg">
+      <label>Supabase Project URL</label>
+      <input id="cfg-url" type="text" placeholder="https://xxxxxxxxxxxx.supabase.co">
+      <div class="hint">Supabase → Settings → API → Project URL</div>
+    </div>
+    <div class="mg">
+      <label>Service Role Key</label>
+      <input id="cfg-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      <div class="hint">Supabase → Settings → API → service_role (secret key)</div>
+    </div>
+
+    <div id="cfg-alert" class="alert a-err"></div>
+    <button class="btn btn-primary btn-full" id="cfg-btn" onclick="doConnect()">Connect to Supabase →</button>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn-link" onclick="var el=document.getElementById('dbg');el.style.display=el.style.display==='block'?'none':'block'">Show debug log</button>
+    </div>
+    <pre id="dbg"></pre>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — SIGN IN / SIGN UP
+     ══════════════════════════════════════════ -->
+<div id="sc-auth" class="screen">
+
+  <!-- Left hero panel -->
+  <div class="auth-left">
+    <div style="font-size:52px;margin-bottom:20px">🛡</div>
+    <h1 style="font-size:30px;font-weight:900;color:var(--white);margin-bottom:8px">ExamGuard</h1>
+    <p style="color:var(--accent);font-size:15px;font-weight:600;margin-bottom:20px">Admin Control Panel</p>
+    <p style="color:var(--sub);font-size:14px;line-height:1.8">
+      Centralized control for managing students, faculty, exams, and results. Only admins can create accounts in the system.
+    </p>
+    <div style="margin-top:36px;display:flex;flex-direction:column;gap:10px">
+      <div style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:7px 16px;color:var(--accent);font-size:13px">🔒 Full Access Control</div>
+      <div style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:7px 16px;color:var(--accent);font-size:13px">☁️ Supabase Cloud Database</div>
+      <div style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:7px 16px;color:var(--accent);font-size:13px">👤 Student &amp; Faculty Management</div>
+      <div style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:7px 16px;color:var(--accent);font-size:13px">📊 Live Results &amp; Analytics</div>
+    </div>
+    <div style="margin-top:auto;padding-top:40px">
+      <button class="btn-link" onclick="doReset()">⟵ Change Supabase project</button>
+    </div>
+  </div>
+
+  <!-- Right card with Sign In / Sign Up tabs -->
+  <div class="auth-right">
+    <div class="auth-card">
+
+      <!-- Tab switcher -->
+      <div class="tab-switch">
+        <button id="tab-signin-btn" class="on" onclick="switchAuthTab('signin')">🔓 Sign In</button>
+        <button id="tab-signup-btn"           onclick="switchAuthTab('signup')">✏️ Sign Up</button>
+      </div>
+
+      <!-- ── SIGN IN FORM ── -->
+      <div id="form-signin" class="form-panel on">
+        <div class="form-title">Welcome Back</div>
+        <div class="form-sub">Sign in to your admin account.</div>
+
+        <div class="mg">
+          <label>Username</label>
+          <input id="li-user" type="text" placeholder="Your admin username" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="mg">
+          <label>Password</label>
+          <input id="li-pwd" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+
+        <div id="li-alert" class="alert a-err"></div>
+
+        <button class="btn btn-primary btn-full" id="li-btn" onclick="doLogin()">
+          🔓 Sign In
+        </button>
+      </div>
+
+      <!-- ── SIGN UP FORM ── -->
+      <div id="form-signup" class="form-panel">
+        <div class="form-title">Create Admin Account</div>
+        <div class="form-sub">Register a new admin. All admins have full access to the panel.</div>
+
+        <div class="mg">
+          <label>Username</label>
+          <input id="su-user" type="text" placeholder="Choose a username">
+        </div>
+        <div class="row2">
+          <div class="mg">
+            <label>Password</label>
+            <input id="su-pwd" type="password" placeholder="Min 6 characters">
+          </div>
+          <div class="mg">
+            <label>Confirm Password</label>
+            <input id="su-pwd2" type="password" placeholder="Repeat" onkeydown="if(event.key==='Enter')doSignup()">
+          </div>
+        </div>
+
+        <div id="su-alert" class="alert a-err"></div>
+        <div id="su-ok" class="alert a-ok"></div>
+
+        <button class="btn btn-primary btn-full" id="su-btn" onclick="doSignup()">
+          ✏️ Create Admin Account
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — FULL DASHBOARD
+     ══════════════════════════════════════════ -->
+<div id="sc-dash" class="screen">
+
+  <div class="sidebar">
+    <div class="brand">
+      <h2>🛡 ExamGuard</h2>
+      <small>Admin Control Panel</small>
+    </div>
+    <div class="nav">
+      <button class="nav-btn on" onclick="goTab('dashboard',this)">📊&nbsp; Dashboard</button>
+      <button class="nav-btn"    onclick="goTab('students',this)">👤&nbsp; Students</button>
+      <button class="nav-btn"    onclick="goTab('faculty',this)">🎓&nbsp; Faculty</button>
+      <button class="nav-btn"    onclick="goTab('exams',this)">📋&nbsp; Exams</button>
+      <button class="nav-btn"    onclick="goTab('results',this)">📈&nbsp; Results</button>
+    </div>
+    <div class="sb-foot">
+      <div class="sb-user" id="sb-user">● Connected</div>
+      <button class="btn btn-full" style="font-size:12px" onclick="doLogout()">⎋&nbsp; Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div id="tab-dashboard" class="tab on">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Live overview of your ExamGuard system</div>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" style="color:var(--accent)" id="d-sc">—</div><div class="stat-lbl">Students</div></div>
+        <div class="stat"><div class="stat-num" style="color:var(--green)"  id="d-fc">—</div><div class="stat-lbl">Faculty</div></div>
+        <div class="stat"><div class="stat-num" style="color:var(--yellow)" id="d-ec">—</div><div class="stat-lbl">Exams</div></div>
+        <div class="stat"><div class="stat-num" style="color:var(--sub)"    id="d-rc">—</div><div class="stat-lbl">Submissions</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Recent Students</span><button class="btn btn-sm" onclick="loadDash()">↻</button></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Name</th><th>Email</th><th>Joined</th></tr></thead>
+            <tbody id="d-stu"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Recent Results</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Date</th></tr></thead>
+            <tbody id="d-res"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students -->
+    <div id="tab-students" class="tab">
+      <div class="page-title">Students</div>
+      <div class="page-sub">Create and manage all student accounts</div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">➕ Create New Student</span></div>
+        <div class="row2">
+          <div class="mg"><label>Full Name</label><input id="s-name" placeholder="Student full name"></div>
+          <div class="mg"><label>Email</label><input id="s-email" type="email" placeholder="student@email.com"></div>
+        </div>
+        <div class="row2">
+          <div class="mg"><label>Password</label><input id="s-pwd" type="password" placeholder="Min 6 characters"></div>
+          <div class="mg"><label>Confirm Password</label><input id="s-pwd2" type="password" placeholder="Repeat"></div>
+        </div>
+        <div id="s-alert" class="alert a-err"></div>
+        <div id="s-ok"    class="alert a-ok"></div>
+        <button class="btn btn-primary" id="s-btn" onclick="createAccount('students','s')">✓ Create Student Account</button>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Students <span id="s-cnt" style="color:var(--sub);font-weight:400"></span></span>
+          <button class="btn btn-sm" onclick="loadStudents()">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Joined</th><th>Action</th></tr></thead>
+          <tbody id="s-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- Faculty -->
+    <div id="tab-faculty" class="tab">
+      <div class="page-title">Faculty</div>
+      <div class="page-sub">Create and manage all faculty accounts</div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">➕ Create New Faculty</span></div>
+        <div class="row2">
+          <div class="mg"><label>Full Name</label><input id="f-name" placeholder="Faculty full name"></div>
+          <div class="mg"><label>Email</label><input id="f-email" type="email" placeholder="faculty@email.com"></div>
+        </div>
+        <div class="row2">
+          <div class="mg"><label>Password</label><input id="f-pwd" type="password" placeholder="Min 6 characters"></div>
+          <div class="mg"><label>Confirm Password</label><input id="f-pwd2" type="password" placeholder="Repeat"></div>
+        </div>
+        <div id="f-alert" class="alert a-err"></div>
+        <div id="f-ok"    class="alert a-ok"></div>
+        <button class="btn btn-primary" id="f-btn" onclick="createAccount('faculty','f')">✓ Create Faculty Account</button>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Faculty <span id="f-cnt" style="color:var(--sub);font-weight:400"></span></span>
+          <button class="btn btn-sm" onclick="loadFaculty()">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Joined</th><th>Action</th></tr></thead>
+          <tbody id="f-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- Exams -->
+    <div id="tab-exams" class="tab">
+      <div class="page-title">Exams</div>
+      <div class="page-sub">View, activate, pause, or delete exams</div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Exams</span>
+          <button class="btn btn-sm" onclick="loadExams()">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Title</th><th>Code</th><th>Duration</th><th>Questions</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="e-tbl"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="tab-results" class="tab">
+      <div class="page-title">Results</div>
+      <div class="page-sub">All student exam submissions</div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Results <span id="r-cnt" style="color:var(--sub);font-weight:400"></span></span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="loadResults()">↻ Refresh</button>
+            <button class="btn btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Student ID</th><th>Exam ID</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead>
+          <tbody id="r-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════
+   GLOBALS
+══════════════════════════════ */
+var G = { url:'', key:'', user:'' };
+var csvCache = [];
+
+/* ══════════════════════════════
+   SCREEN / TAB SWITCHING
+══════════════════════════════ */
+function show(id) {
+  ['sc-config','sc-auth','sc-dash'].forEach(function(s){
+    document.getElementById(s).className = 'screen' + (s===id?' on':'');
+  });
+}
+
+function switchAuthTab(tab) {
+  ['signin','signup'].forEach(function(t){
+    document.getElementById('form-'+t).className    = 'form-panel' + (t===tab?' on':'');
+    document.getElementById('tab-'+t+'-btn').className = (t===tab?'on':'');
+  });
+  clearAlert('li-alert'); clearAlert('su-alert'); clearAlert('su-ok');
+}
+
+function goTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.className='tab'; });
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.className='nav-btn'; });
+  document.getElementById('tab-'+id).className = 'tab on';
+  btn.className = 'nav-btn on';
+}
+
+/* ══════════════════════════════
+   ALERTS
+══════════════════════════════ */
+function setAlert(id, msg, type) {
+  var el = document.getElementById(id); if(!el) return;
+  el.textContent = msg;
+  el.className = 'alert '+type+' on';
+  if(type==='a-ok') setTimeout(function(){ el.className='alert a-ok'; }, 3500);
+}
+function clearAlert(id){ var el=document.getElementById(id); if(el) el.className='alert a-err'; }
+
+/* ══════════════════════════════
+   DEBUG
+══════════════════════════════ */
+function dbg(m){
+  var el=document.getElementById('dbg');
+  if(el) el.textContent += new Date().toLocaleTimeString()+'  '+m+'\n';
+  console.log('[EG]',m);
+}
+
+/* ══════════════════════════════
+   SUPABASE HELPERS
+══════════════════════════════ */
+async function sbGet(table, qs) {
+  var r = await fetch(G.url+'/rest/v1/'+table+(qs||''), {
+    headers:{ 'apikey':G.key, 'Authorization':'Bearer '+G.key }
+  });
+  var t = await r.text();
+  if(!r.ok) throw new Error(t);
+  return JSON.parse(t||'[]');
+}
+async function sbPost(table, data) {
+  var r = await fetch(G.url+'/rest/v1/'+table, {
+    method:'POST',
+    headers:{ 'apikey':G.key,'Authorization':'Bearer '+G.key,'Content-Type':'application/json','Prefer':'return=representation' },
+    body: JSON.stringify(data)
+  });
+  var t = await r.text();
+  if(!r.ok) throw new Error(t);
+  return JSON.parse(t||'[]');
+}
+async function sbDel(path) {
+  var r = await fetch(G.url+'/rest/v1/'+path, {
+    method:'DELETE',
+    headers:{ 'apikey':G.key,'Authorization':'Bearer '+G.key }
+  });
+  if(!r.ok) throw new Error(await r.text());
+}
+async function sbPatch(table, id, data) {
+  var r = await fetch(G.url+'/rest/v1/'+table+'?id=eq.'+id, {
+    method:'PATCH',
+    headers:{ 'apikey':G.key,'Authorization':'Bearer '+G.key,'Content-Type':'application/json' },
+    body: JSON.stringify(data)
+  });
+  if(!r.ok) throw new Error(await r.text());
+}
+
+/* ══════════════════════════════
+   PASSWORD — PBKDF2-SHA256
+   Matches Python auth_system.py
+══════════════════════════════ */
+async function hashPwd(pw) {
+  var enc = new TextEncoder();
+  var salt = crypto.getRandomValues(new Uint8Array(32));
+  var km = await crypto.subtle.importKey('raw',enc.encode(pw),{name:'PBKDF2'},false,['deriveBits']);
+  var bits = await crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:260000,hash:'SHA-256'},km,256);
+  var hex = function(a){ return Array.from(new Uint8Array(a)).map(function(b){return b.toString(16).padStart(2,'0')}).join(''); };
+  return hex(salt)+':'+hex(bits);
+}
+async function verifyPwd(pw, stored) {
+  try {
+    var parts = stored.split(':');
+    var salt = new Uint8Array(parts[0].match(/.{2}/g).map(function(b){return parseInt(b,16)}));
+    var enc = new TextEncoder();
+    var km = await crypto.subtle.importKey('raw',enc.encode(pw),{name:'PBKDF2'},false,['deriveBits']);
+    var bits = await crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:260000,hash:'SHA-256'},km,256);
+    var hex = function(a){ return Array.from(new Uint8Array(a)).map(function(b){return b.toString(16).padStart(2,'0')}).join(''); };
+    return hex(bits)===parts[1];
+  } catch(e){ return false; }
+}
+
+/* ══════════════════════════════
+   SCREEN 1 — CONNECT
+══════════════════════════════ */
+async function doConnect() {
+  clearAlert('cfg-alert');
+  var url = document.getElementById('cfg-url').value.trim().replace(/\/$/,'');
+  var key = document.getElementById('cfg-key').value.trim();
+  if(!url||!key){ setAlert('cfg-alert','Please enter both URL and Service Role Key.','a-err'); return; }
+  if(!url.startsWith('https://')){ setAlert('cfg-alert','URL must start with https://','a-err'); return; }
+
+  var btn = document.getElementById('cfg-btn');
+  btn.textContent='Connecting...'; btn.disabled=true;
+  G.url=url; G.key=key;
+  dbg('Connecting: '+url);
+
+  try {
+    await sbGet('admins','?select=id&limit=1');
+    dbg('Connected!');
+    localStorage.setItem('eg_url',url);
+    localStorage.setItem('eg_key',key);
+    btn.textContent='Connected ✓';
+    setTimeout(function(){ show('sc-auth'); }, 400);
+  } catch(e) {
+    dbg('Error: '+e.message);
+    G.url=''; G.key='';
+    if(e.message.indexOf('42P01')>-1||e.message.toLowerCase().indexOf('relation')>-1){
+      setAlert('cfg-alert',
+        '⚠️ The "admins" table does not exist.\n\nGo to Supabase → SQL Editor → New Query → paste and Run:\n\nCREATE TABLE admins (\n  id SERIAL PRIMARY KEY,\n  username TEXT UNIQUE NOT NULL,\n  password_hash TEXT NOT NULL,\n  created_at TIMESTAMP DEFAULT NOW()\n);',
+        'a-err'
+      );
+    } else {
+      setAlert('cfg-alert','Connection failed: '+e.message,'a-err');
+    }
+    btn.textContent='Connect to Supabase →'; btn.disabled=false;
+  }
+}
+
+/* ══════════════════════════════
+   SIGN IN
+══════════════════════════════ */
+async function doLogin() {
+  clearAlert('li-alert');
+  var u = document.getElementById('li-user').value.trim().toLowerCase();
+  var p = document.getElementById('li-pwd').value;
+  if(!u||!p){ setAlert('li-alert','Please enter username and password.','a-err'); return; }
+
+  var btn = document.getElementById('li-btn');
+  btn.textContent='Verifying...'; btn.disabled=true;
+
+  try {
+    var rows = await sbGet('admins','?username=eq.'+encodeURIComponent(u)+'&select=id,username,password_hash');
+    if(rows.length===0){ setAlert('li-alert','Username not found.','a-err'); btn.textContent='🔓 Sign In'; btn.disabled=false; return; }
+
+    var ok = await verifyPwd(p, rows[0].password_hash);
+    if(!ok){ setAlert('li-alert','Incorrect password. Please try again.','a-err'); btn.textContent='🔓 Sign In'; btn.disabled=false; return; }
+
+    G.user = u;
+    document.getElementById('sb-user').textContent = '● Logged in as '+u;
+    show('sc-dash');
+    loadAll();
+  } catch(e) {
+    setAlert('li-alert','Error: '+e.message,'a-err');
+    btn.textContent='🔓 Sign In'; btn.disabled=false;
+  }
+}
+
+/* ══════════════════════════════
+   SIGN UP
+══════════════════════════════ */
+async function doSignup() {
+  clearAlert('su-alert'); clearAlert('su-ok');
+  var u  = document.getElementById('su-user').value.trim().toLowerCase();
+  var p  = document.getElementById('su-pwd').value;
+  var p2 = document.getElementById('su-pwd2').value;
+
+  if(!u||!p)   { setAlert('su-alert','All fields are required.','a-err'); return; }
+  if(p!==p2)   { setAlert('su-alert','Passwords do not match.','a-err'); return; }
+  if(p.length<6){ setAlert('su-alert','Password must be at least 6 characters.','a-err'); return; }
+
+  var btn = document.getElementById('su-btn');
+  btn.textContent='Creating...'; btn.disabled=true;
+
+  try {
+    var hash = await hashPwd(p);
+    await sbPost('admins',{ username:u, password_hash:hash });
+    setAlert('su-ok','✓ Admin account "'+u+'" created! You can now sign in.','a-ok');
+    document.getElementById('su-user').value='';
+    document.getElementById('su-pwd').value='';
+    document.getElementById('su-pwd2').value='';
+    setTimeout(function(){ switchAuthTab('signin'); }, 2000);
+  } catch(e) {
+    var msg = (e.message.indexOf('unique')>-1||e.message.indexOf('duplicate')>-1)
+      ? 'Username "'+u+'" already exists. Choose a different username.'
+      : 'Error: '+e.message;
+    setAlert('su-alert',msg,'a-err');
+  }
+
+  btn.textContent='✏️ Create Admin Account'; btn.disabled=false;
+}
+
+/* ══════════════════════════════
+   LOGOUT / RESET
+══════════════════════════════ */
+function doLogout() {
+  G.user='';
+  document.getElementById('li-user').value='';
+  document.getElementById('li-pwd').value='';
+  clearAlert('li-alert');
+  switchAuthTab('signin');
+  show('sc-auth');
+}
+
+function doReset() {
+  if(!confirm('Clear saved Supabase credentials and return to config?\nYou will need to re-enter your URL and Key.')) return;
+  localStorage.removeItem('eg_url');
+  localStorage.removeItem('eg_key');
+  G.url=''; G.key='';
+  document.getElementById('cfg-url').value='';
+  document.getElementById('cfg-key').value='';
+  document.getElementById('cfg-btn').textContent='Connect to Supabase →';
+  document.getElementById('cfg-btn').disabled=false;
+  clearAlert('cfg-alert');
+  show('sc-config');
+}
+
+/* ══════════════════════════════
+   LOAD ALL DATA
+══════════════════════════════ */
+function loadAll(){ loadDash(); loadStudents(); loadFaculty(); loadExams(); loadResults(); }
+function fmtDate(d){ return d?String(d).slice(0,10):'—'; }
+function fmtPct(p){ return Math.round(p*10)/10+'%'; }
+function pctBadge(p){ return '<span class="badge '+(p>=80?'b-green':p>=60?'b-blue':'b-red')+'">'+fmtPct(p)+'</span>'; }
+
+async function loadDash() {
+  try {
+    var c = await Promise.all([
+      sbGet('students','?select=count'), sbGet('faculty','?select=count'),
+      sbGet('exams','?select=count'),    sbGet('results','?select=count')
+    ]);
+    document.getElementById('d-sc').textContent=c[0][0]?.count??0;
+    document.getElementById('d-fc').textContent=c[1][0]?.count??0;
+    document.getElementById('d-ec').textContent=c[2][0]?.count??0;
+    document.getElementById('d-rc').textContent=c[3][0]?.count??0;
+
+    var stu = await sbGet('students','?select=name,email,created_at&order=created_at.desc&limit=5');
+    document.getElementById('d-stu').innerHTML = stu.length
+      ? stu.map(function(s){return '<tr><td>'+s.name+'</td><td style="color:var(--sub)">'+s.email+'</td><td>'+fmtDate(s.created_at)+'</td></tr>';}).join('')
+      : '<tr><td colspan="3" class="empty">No students yet</td></tr>';
+
+    var res = await sbGet('results','?select=student_id,exam_id,percentage,submitted_at&order=submitted_at.desc&limit=5');
+    document.getElementById('d-res').innerHTML = res.length
+      ? res.map(function(r){return '<tr><td>#'+r.student_id+'</td><td>#'+r.exam_id+'</td><td>'+pctBadge(r.percentage)+'</td><td>'+fmtDate(r.submitted_at)+'</td></tr>';}).join('')
+      : '<tr><td colspan="4" class="empty">No results yet</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+async function loadStudents() {
+  try {
+    var rows = await sbGet('students','?select=id,name,email,created_at&order=created_at.desc');
+    document.getElementById('s-cnt').textContent='('+rows.length+')';
+    document.getElementById('s-tbl').innerHTML = rows.length
+      ? rows.map(function(r,i){return '<tr><td style="color:var(--muted)">'+(i+1)+'</td><td><strong style="color:var(--white)">'+r.name+'</strong></td><td style="color:var(--sub)">'+r.email+'</td><td>'+fmtDate(r.created_at)+'</td><td><button class="btn btn-sm btn-danger" onclick="delRow(\'students\','+r.id+')">Delete</button></td></tr>';}).join('')
+      : '<tr><td colspan="5" class="empty">No students yet. Create one above.</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+async function loadFaculty() {
+  try {
+    var rows = await sbGet('faculty','?select=id,name,email,created_at&order=created_at.desc');
+    document.getElementById('f-cnt').textContent='('+rows.length+')';
+    document.getElementById('f-tbl').innerHTML = rows.length
+      ? rows.map(function(r,i){return '<tr><td style="color:var(--muted)">'+(i+1)+'</td><td><strong style="color:var(--white)">'+r.name+'</strong></td><td style="color:var(--sub)">'+r.email+'</td><td>'+fmtDate(r.created_at)+'</td><td><button class="btn btn-sm btn-danger" onclick="delRow(\'faculty\','+r.id+')">Delete</button></td></tr>';}).join('')
+      : '<tr><td colspan="5" class="empty">No faculty yet. Create one above.</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+async function loadExams() {
+  try {
+    var rows = await sbGet('exams','?select=id,title,exam_code,duration_minutes,is_active&order=created_at.desc');
+    var qc = await Promise.all(rows.map(function(r){ return sbGet('questions','?exam_id=eq.'+r.id+'&select=count'); }));
+    document.getElementById('e-tbl').innerHTML = rows.length
+      ? rows.map(function(r,i){
+          var a=r.is_active;
+          return '<tr><td><strong style="color:var(--white)">'+r.title+'</strong></td><td><code>'+r.exam_code+'</code></td><td>'+r.duration_minutes+' min</td><td><span class="badge b-blue">'+(qc[i][0]?.count??0)+' Qs</span></td><td><span class="badge '+(a?'b-green':'b-red')+'">'+(a?'Active':'Inactive')+'</span></td><td style="display:flex;gap:6px"><button class="btn btn-sm '+(a?'btn-danger':'btn-success')+'" onclick="toggleExam('+r.id+','+a+')">'+(a?'Pause':'Activate')+'</button><button class="btn btn-sm btn-danger" onclick="deleteExam('+r.id+')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="6" class="empty">No exams yet.</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+async function loadResults() {
+  try {
+    var rows = await sbGet('results','?select=id,student_id,exam_id,score,total_questions,percentage,submitted_at&order=submitted_at.desc');
+    csvCache=rows;
+    document.getElementById('r-cnt').textContent='('+rows.length+')';
+    document.getElementById('r-tbl').innerHTML = rows.length
+      ? rows.map(function(r){return '<tr><td>Student #'+r.student_id+'</td><td>Exam #'+r.exam_id+'</td><td>'+r.score+' / '+r.total_questions+'</td><td>'+pctBadge(r.percentage)+'</td><td style="color:var(--sub)">'+fmtDate(r.submitted_at)+'</td></tr>';}).join('')
+      : '<tr><td colspan="5" class="empty">No results yet.</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+async function createAccount(table, prefix) {
+  clearAlert(prefix+'-alert'); clearAlert(prefix+'-ok');
+  var name  = document.getElementById(prefix+'-name').value.trim();
+  var email = document.getElementById(prefix+'-email').value.trim().toLowerCase();
+  var pwd   = document.getElementById(prefix+'-pwd').value;
+  var pwd2  = document.getElementById(prefix+'-pwd2').value;
+  if(!name||!email||!pwd){ setAlert(prefix+'-alert','All fields are required.','a-err'); return; }
+  if(pwd!==pwd2)          { setAlert(prefix+'-alert','Passwords do not match.','a-err'); return; }
+  if(pwd.length<6)        { setAlert(prefix+'-alert','Password must be at least 6 characters.','a-err'); return; }
+
+  var label = table==='students'?'Student':'Faculty';
+  var btn = document.getElementById(prefix+'-btn');
+  btn.textContent='Creating...'; btn.disabled=true;
+
+  try {
+    var hash = await hashPwd(pwd);
+    await sbPost(table,{ name:name, email:email, password_hash:hash });
+    setAlert(prefix+'-ok','✓ '+label+' account for "'+name+'" created!','a-ok');
+    ['name','email','pwd','pwd2'].forEach(function(f){ document.getElementById(prefix+'-'+f).value=''; });
+    if(table==='students') loadStudents(); else loadFaculty();
+    loadDash();
+  } catch(e) {
+    var msg=(e.message.indexOf('unique')>-1||e.message.indexOf('duplicate')>-1)
+      ?'Email "'+email+'" already exists.'
+      :'Error: '+e.message;
+    setAlert(prefix+'-alert',msg,'a-err');
+  }
+  btn.textContent='✓ Create '+label+' Account'; btn.disabled=false;
+}
+
+async function delRow(table, id) {
+  if(!confirm('Delete this account permanently?\nThis cannot be undone.')) return;
+  try { await sbDel(table+'?id=eq.'+id); if(table==='students') loadStudents(); else loadFaculty(); loadDash(); }
+  catch(e){ alert('Error: '+e.message); }
+}
+
+async function toggleExam(id, cur) {
+  try { await sbPatch('exams',id,{is_active:!cur}); loadExams(); }
+  catch(e){ alert('Error: '+e.message); }
+}
+
+async function deleteExam(id) {
+  if(!confirm('Delete exam and all its questions?\nResults will be kept.\nCannot be undone.')) return;
+  try { await sbDel('questions?exam_id=eq.'+id); await sbDel('exams?id=eq.'+id); loadExams(); loadDash(); }
+  catch(e){ alert('Error: '+e.message); }
+}
+
+function exportCSV() {
+  if(!csvCache.length){ alert('No results to export.'); return; }
+  var lines=['Student ID,Exam ID,Score,Total,Percentage,Date'];
+  csvCache.forEach(function(r){ lines.push(r.student_id+','+r.exam_id+','+r.score+','+r.total_questions+','+r.percentage+','+fmtDate(r.submitted_at)); });
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(lines.join('\n'));
+  a.download='examguard_results.csv'; a.click();
+}
+
+/* ══════════════════════════════
+   STARTUP
+══════════════════════════════ */
+window.addEventListener('load', async function() {
+  var savedUrl = localStorage.getItem('eg_url');
+  var savedKey = localStorage.getItem('eg_key');
+  if(savedUrl) document.getElementById('cfg-url').value=savedUrl;
+  if(savedKey) document.getElementById('cfg-key').value=savedKey;
+
+  if(!savedUrl||!savedKey){ show('sc-config'); return; }
+
+  G.url=savedUrl; G.key=savedKey;
+  dbg('Auto-connecting...');
+
+  try {
+    await sbGet('admins','?select=id&limit=1');
+    dbg('Auto-connect success → login screen');
+    show('sc-auth');
+  } catch(e) {
+    dbg('Auto-connect failed: '+e.message);
+    G.url=''; G.key='';
+    show('sc-config');
+  }
+});
+</script>
+</body>
+</html>
