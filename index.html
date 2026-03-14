@@ -288,7 +288,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
         <div class="card">
           <div class="card-head"><span class="card-title">Recent Results</span></div>
           <div class="tbl-wrap"><table>
-            <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Date</th></tr></thead>
+            <thead><tr><th>Student Name</th><th>Exam Code</th><th>Score</th><th>Date</th></tr></thead>
             <tbody id="d-res"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody>
           </table></div>
         </div>
@@ -654,10 +654,30 @@ async function loadDash() {
       ? stu.map(function(s){return '<tr><td>'+s.name+'</td><td style="color:var(--sub)">'+s.email+'</td><td>'+fmtDate(s.created_at)+'</td></tr>';}).join('')
       : '<tr><td colspan="3" class="empty">No students yet</td></tr>';
 
-    var res = await sbGet('results','?select=student_id,exam_id,percentage,submitted_at&order=submitted_at.desc&limit=5');
+    // ── Fetch results + student names + exam codes ──
+    var [res, students, exams] = await Promise.all([
+      sbGet('results','?select=student_id,exam_id,percentage,submitted_at&order=submitted_at.desc&limit=5'),
+      sbGet('students','?select=id,name'),
+      sbGet('exams','?select=id,exam_code'),
+    ]);
+
+    var stuMap = {};
+    students.forEach(function(s){ stuMap[s.id] = s.name; });
+
+    var examMap = {};
+    exams.forEach(function(e){ examMap[e.id] = e.exam_code; });
+
     document.getElementById('d-res').innerHTML = res.length
-      ? res.map(function(r){return '<tr><td>#'+r.student_id+'</td><td>#'+r.exam_id+'</td><td>'+pctBadge(r.percentage)+'</td><td>'+fmtDate(r.submitted_at)+'</td></tr>';}).join('')
+      ? res.map(function(r){
+          return '<tr>' +
+            '<td><strong style="color:var(--white)">' + (stuMap[r.student_id] || 'Student #'+r.student_id) + '</strong></td>' +
+            '<td><code>' + (examMap[r.exam_id] || 'Exam #'+r.exam_id) + '</code></td>' +
+            '<td>' + pctBadge(r.percentage) + '</td>' +
+            '<td>' + fmtDate(r.submitted_at) + '</td>' +
+          '</tr>';
+        }).join('')
       : '<tr><td colspan="4" class="empty">No results yet</td></tr>';
+
   } catch(e){ console.error(e); }
 }
 
