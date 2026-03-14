@@ -384,7 +384,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
           </div>
         </div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Student ID</th><th>Exam ID</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead>
+          <thead><tr><th>Student Name</th><th>Exam Code</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead>
           <tbody id="r-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
         </table></div>
       </div>
@@ -696,13 +696,36 @@ async function loadExams() {
 
 async function loadResults() {
   try {
-    var rows = await sbGet('results','?select=id,student_id,exam_id,score,total_questions,percentage,submitted_at&order=submitted_at.desc');
-    csvCache=rows;
-    document.getElementById('r-cnt').textContent='('+rows.length+')';
+    // Fetch results, students and exams all at once
+    var [rows, students, exams] = await Promise.all([
+      sbGet('results', '?select=id,student_id,exam_id,score,total_questions,percentage,submitted_at&order=submitted_at.desc'),
+      sbGet('students', '?select=id,name'),
+      sbGet('exams', '?select=id,exam_code'),
+    ]);
+
+    csvCache = rows;
+    document.getElementById('r-cnt').textContent = '(' + rows.length + ')';
+
+    // Build lookup maps  id → name/code
+    var stuMap = {};
+    students.forEach(function(s){ stuMap[s.id] = s.name; });
+
+    var examMap = {};
+    exams.forEach(function(e){ examMap[e.id] = e.exam_code; });
+
     document.getElementById('r-tbl').innerHTML = rows.length
-      ? rows.map(function(r){return '<tr><td>Student #'+r.student_id+'</td><td>Exam #'+r.exam_id+'</td><td>'+r.score+' / '+r.total_questions+'</td><td>'+pctBadge(r.percentage)+'</td><td style="color:var(--sub)">'+fmtDate(r.submitted_at)+'</td></tr>';}).join('')
+      ? rows.map(function(r) {
+          return '<tr>' +
+            '<td><strong style="color:var(--white)">' + (stuMap[r.student_id] || 'Student #' + r.student_id) + '</strong></td>' +
+            '<td><code>' + (examMap[r.exam_id] || 'Exam #' + r.exam_id) + '</code></td>' +
+            '<td>' + r.score + ' / ' + r.total_questions + '</td>' +
+            '<td>' + pctBadge(r.percentage) + '</td>' +
+            '<td style="color:var(--sub)">' + fmtDate(r.submitted_at) + '</td>' +
+          '</tr>';
+        }).join('')
       : '<tr><td colspan="5" class="empty">No results yet.</td></tr>';
-  } catch(e){ console.error(e); }
+
+  } catch(e) { console.error(e); }
 }
 
 async function createAccount(table, prefix) {
