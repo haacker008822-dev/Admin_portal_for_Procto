@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ExamGuard — Admin Panel</title>
+<title>Procto — Admin Panel</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -132,7 +132,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
 <div id="sc-config" class="screen">
   <div class="box">
     <div style="font-size:36px;margin-bottom:14px">🛡</div>
-    <h1>ExamGuard Admin</h1>
+    <h1>Procto Admin</h1>
     <p class="sub">Connect your Supabase database. Only needed once — saved automatically.</p>
 
     <div class="mg">
@@ -163,7 +163,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
   <!-- Left hero panel -->
   <div class="auth-left">
     <div style="font-size:52px;margin-bottom:20px">🛡</div>
-    <h1 style="font-size:30px;font-weight:900;color:var(--white);margin-bottom:8px">ExamGuard</h1>
+    <h1 style="font-size:30px;font-weight:900;color:var(--white);margin-bottom:8px">Procto</h1>
     <p style="color:var(--accent);font-size:15px;font-weight:600;margin-bottom:20px">Admin Control Panel</p>
     <p style="color:var(--sub);font-size:14px;line-height:1.8">
       Centralized control for managing students, faculty, exams, and results. Only admins can create accounts in the system.
@@ -249,7 +249,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
 
   <div class="sidebar">
     <div class="brand">
-      <h2>🛡 ExamGuard</h2>
+      <h2>🛡 Procto</h2>
       <small>Admin Control Panel</small>
     </div>
     <div class="nav">
@@ -270,7 +270,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
     <!-- Dashboard -->
     <div id="tab-dashboard" class="tab on">
       <div class="page-title">Dashboard</div>
-      <div class="page-sub">Live overview of your ExamGuard system</div>
+      <div class="page-sub">Live overview of your Procto system</div>
       <div class="stats">
         <div class="stat"><div class="stat-num" style="color:var(--accent)" id="d-sc">—</div><div class="stat-lbl">Students</div></div>
         <div class="stat"><div class="stat-num" style="color:var(--green)"  id="d-fc">—</div><div class="stat-lbl">Faculty</div></div>
@@ -758,7 +758,7 @@ function exportCSV() {
   csvCache.forEach(function(r){ lines.push(r.student_id+','+r.exam_id+','+r.score+','+r.total_questions+','+r.percentage+','+fmtDate(r.submitted_at)); });
   var a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(lines.join('\n'));
-  a.download='examguard_results.csv'; a.click();
+  a.download='procto_results.csv'; a.click();
 }
 
 /* ══════════════════════════════
