@@ -384,7 +384,7 @@ pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(-
           </div>
         </div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Student Name</th><th>Exam Code</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead>
+          <thead><tr><th>Student Name</th><th>Exam Code</th><th>Score</th><th>Percentage</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="r-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
         </table></div>
       </div>
@@ -716,7 +716,6 @@ async function loadExams() {
 
 async function loadResults() {
   try {
-    // Fetch results, students and exams all at once
     var [rows, students, exams] = await Promise.all([
       sbGet('results', '?select=id,student_id,exam_id,score,total_questions,percentage,submitted_at&order=submitted_at.desc'),
       sbGet('students', '?select=id,name'),
@@ -726,7 +725,6 @@ async function loadResults() {
     csvCache = rows;
     document.getElementById('r-cnt').textContent = '(' + rows.length + ')';
 
-    // Build lookup maps  id → name/code
     var stuMap = {};
     students.forEach(function(s){ stuMap[s.id] = s.name; });
 
@@ -735,15 +733,19 @@ async function loadResults() {
 
     document.getElementById('r-tbl').innerHTML = rows.length
       ? rows.map(function(r) {
-          return '<tr>' +
+          return '<tr id="row-' + r.id + '">' +
             '<td><strong style="color:var(--white)">' + (stuMap[r.student_id] || 'Student #' + r.student_id) + '</strong></td>' +
             '<td><code>' + (examMap[r.exam_id] || 'Exam #' + r.exam_id) + '</code></td>' +
-            '<td>' + r.score + ' / ' + r.total_questions + '</td>' +
-            '<td>' + pctBadge(r.percentage) + '</td>' +
+            '<td id="score-' + r.id + '">' + r.score + ' / ' + r.total_questions + '</td>' +
+            '<td id="pct-' + r.id + '">' + pctBadge(r.percentage) + '</td>' +
             '<td style="color:var(--sub)">' + fmtDate(r.submitted_at) + '</td>' +
+            '<td style="display:flex;gap:6px">' +
+              '<button class="btn btn-sm btn-success" onclick="editResult(' + r.id + ',' + r.score + ',' + r.total_questions + ',' + r.percentage + ')">✏️ Edit</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="deleteResult(' + r.id + ')">Delete</button>' +
+            '</td>' +
           '</tr>';
         }).join('')
-      : '<tr><td colspan="5" class="empty">No results yet.</td></tr>';
+      : '<tr><td colspan="6" class="empty">No results yet.</td></tr>';
 
   } catch(e) { console.error(e); }
 }
@@ -828,6 +830,62 @@ window.addEventListener('load', async function() {
     show('sc-config');
   }
 });
+  function editResult(id, score, total, percentage) {
+  // Replace the score and percentage cells with input boxes
+  document.getElementById('score-' + id).innerHTML =
+    '<div style="display:flex;align-items:center;gap:6px">' +
+      '<input type="number" id="inp-score-' + id + '" value="' + score + '" min="0" max="' + total + '" ' +
+        'style="width:60px;padding:4px 8px;font-size:12px;background:var(--surface);color:var(--text);border:1px solid var(--accent);border-radius:6px">' +
+      '<span style="color:var(--sub)">/ ' + total + '</span>' +
+    '</div>';
+
+  document.getElementById('pct-' + id).innerHTML =
+    '<input type="number" id="inp-pct-' + id + '" value="' + percentage + '" min="0" max="100" step="0.1" ' +
+      'style="width:70px;padding:4px 8px;font-size:12px;background:var(--surface);color:var(--text);border:1px solid var(--accent);border-radius:6px">';
+
+  // Replace Edit button with Save + Cancel
+  var row = document.getElementById('row-' + id);
+  var actionCell = row.cells[row.cells.length - 1];
+  actionCell.innerHTML =
+    '<button class="btn btn-sm btn-primary" onclick="saveResult(' + id + ',' + total + ')">💾 Save</button>' +
+    '<button class="btn btn-sm" onclick="loadResults()" style="margin-left:6px">✕ Cancel</button>';
+}
+
+async function saveResult(id, total) {
+  var scoreEl = document.getElementById('inp-score-' + id);
+  var pctEl   = document.getElementById('inp-pct-' + id);
+
+  var newScore = parseInt(scoreEl.value);
+  var newPct   = parseFloat(pctEl.value);
+
+  // Validation
+  if (isNaN(newScore) || newScore < 0 || newScore > total) {
+    alert('Score must be between 0 and ' + total + '.'); return;
+  }
+  if (isNaN(newPct) || newPct < 0 || newPct > 100) {
+    alert('Percentage must be between 0 and 100.'); return;
+  }
+
+  try {
+    await sbPatch('results', id, {
+      score: newScore,
+      percentage: newPct
+    });
+    loadResults();  // Refresh table
+    loadDash();     // Refresh dashboard stats too
+  } catch(e) {
+    alert('Error saving: ' + e.message);
+  }
+}
+
+async function deleteResult(id) {
+  if (!confirm('Delete this result permanently?\nThis cannot be undone.')) return;
+  try {
+    await sbDel('results?id=eq.' + id);
+    loadResults();
+    loadDash();
+  } catch(e) { alert('Error: ' + e.message); }
+}
 </script>
 </body>
 </html>
