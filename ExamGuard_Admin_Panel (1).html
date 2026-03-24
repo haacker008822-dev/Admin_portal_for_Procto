@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamGuard — Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080C14;--surface:#0D1420;--card:#111827;--card2:#19243A;
+  --b1:#1E2D45;--b2:#243350;
+  --accent:#3B82F6;--accent2:#2563EB;--glow:rgba(59,130,246,0.15);
+  --green:#10B981;--green-bg:rgba(16,185,129,0.12);
+  --yellow:#F59E0B;--yellow-bg:rgba(245,158,11,0.12);
+  --red:#EF4444;--red-bg:rgba(239,68,68,0.12);
+  --text:#E8F0FE;--sub:#7A8BAA;--muted:#3D4F68;--white:#fff;
+}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+
+/* ── Screens ── */
+.screen{display:none}
+.screen.on{display:flex}
+
+/* ── Config / Setup / Login screens ── */
+#sc-config,#sc-setup,#sc-login{min-height:100vh;align-items:center;justify-content:center}
+.box{background:var(--card);border:1px solid var(--b1);border-radius:16px;padding:40px;width:480px}
+.box h1{font-size:22px;font-weight:700;color:var(--white);margin-bottom:6px}
+.box .sub{color:var(--sub);font-size:13px;margin-bottom:26px}
+label{display:block;font-size:11px;font-weight:600;color:var(--sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+input{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--b1);border-radius:8px;padding:10px 13px;font-size:13px;margin-bottom:4px;font-family:inherit;transition:border .15s}
+input:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:11px;color:var(--muted);margin-bottom:14px}
+.mg{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ── Buttons ── */
+.btn{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--b2);background:var(--card2);color:var(--text);font-family:inherit;transition:all .15s}
+.btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:var(--white);border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-full{width:100%;padding:12px;font-size:14px}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.btn-danger:hover{background:var(--red);color:var(--white)}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.btn-success:hover{background:var(--green);color:var(--white)}
+.btn-link{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;padding:4px}
+.btn-link:hover{color:var(--accent)}
+
+/* ── Alerts ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;display:none;white-space:pre-line}
+.alert.on{display:block}
+.a-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.a-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.a-warn{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow)}
+
+/* ── Dashboard layout ── */
+#sc-dash{flex-direction:row;min-height:100vh}
+.sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--b1);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0}
+.brand{padding:20px;border-bottom:1px solid var(--b1)}
+.brand h2{font-size:15px;font-weight:700;color:var(--white)}
+.brand small{color:var(--muted);font-size:11px}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-btn{display:block;width:100%;text-align:left;padding:12px 20px;background:none;border:none;border-left:3px solid transparent;color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.nav-btn:hover{background:var(--card);color:var(--text)}
+.nav-btn.on{color:var(--accent);border-left-color:var(--accent);background:var(--glow)}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--b1)}
+.sb-user{font-size:12px;color:var(--green);margin-bottom:8px}
+
+/* ── Main area ── */
+.main{margin-left:220px;padding:32px;flex:1;min-height:100vh}
+.tab{display:none}.tab.on{display:block}
+.page-title{font-size:20px;font-weight:700;color:var(--white);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--sub);margin-bottom:24px}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:var(--card2);border:1px solid var(--b2);border-radius:10px;padding:18px}
+.stat-num{font-size:28px;font-weight:700;margin-bottom:4px}
+.stat-lbl{font-size:12px;color:var(--sub)}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--b1);border-radius:12px;padding:22px;margin-bottom:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-title{font-size:14px;font-weight:600;color:var(--white)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--sub);border-bottom:1px solid var(--b1);text-transform:uppercase;letter-spacing:.4px}
+td{padding:11px 12px;border-bottom:1px solid var(--b1);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.empty{text-align:center;padding:36px;color:var(--muted)}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.b-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.b-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.b-blue{background:var(--glow);color:var(--accent);border:1px solid var(--accent)}
+.b-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow)}
+
+/* ── Debug log ── */
+pre{background:#060d1c;border-radius:8px;padding:12px;font-size:11px;color:var(--sub);margin-top:12px;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;display:none}
+
+code{font-family:Consolas,monospace;font-size:12px;background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--accent)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — SUPABASE CONFIG
+     ══════════════════════════════════════════ -->
+<div id="sc-config" class="screen">
+  <div class="box">
+    <div style="font-size:36px;margin-bottom:14px">🛡</div>
+    <h1>ExamGuard Admin</h1>
+    <p class="sub">Connect your Supabase database. Only needed once — saved automatically in your browser.</p>
+
+    <div class="mg">
+      <label>Supabase Project URL</label>
+      <input id="cfg-url" type="text" placeholder="https://xxxxxxxxxxxx.supabase.co">
+      <div class="hint">Supabase → Settings → API → Project URL</div>
+    </div>
+    <div class="mg">
+      <label>Service Role Key</label>
+      <input id="cfg-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      <div class="hint">Supabase → Settings → API → service_role (secret key)</div>
+    </div>
+
+    <div id="cfg-alert" class="alert a-err"></div>
+
+    <button class="btn btn-primary btn-full" id="cfg-btn" onclick="doConnect()">Connect to Supabase →</button>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn-link" onclick="document.getElementById('dbg').style.display=document.getElementById('dbg').style.display==='block'?'none':'block'">Show debug log</button>
+    </div>
+    <pre id="dbg"></pre>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — CREATE ADMIN (first time)
+     ══════════════════════════════════════════ -->
+<div id="sc-setup" class="screen">
+  <div class="box">
+    <div class="alert a-warn on" style="margin-bottom:20px">⚙️ First time setup — create your admin account</div>
+    <h1>Create Admin Account</h1>
+    <p class="sub">Set a username and password. Stored securely in Supabase. You only do this once.</p>
+
+    <div class="mg">
+      <label>Admin Username</label>
+      <input id="setup-user" type="text" placeholder="e.g. admin">
+    </div>
+    <div class="row2">
+      <div class="mg">
+        <label>Password</label>
+        <input id="setup-pwd" type="password" placeholder="Min 6 characters">
+      </div>
+      <div class="mg">
+        <label>Confirm Password</label>
+        <input id="setup-pwd2" type="password" placeholder="Repeat">
+      </div>
+    </div>
+
+    <div id="setup-alert" class="alert a-err"></div>
+    <div id="setup-ok" class="alert a-ok"></div>
+
+    <button class="btn btn-primary btn-full" id="setup-btn" onclick="doSetup()">Create Admin Account →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — LOGIN
+     ══════════════════════════════════════════ -->
+<div id="sc-login" class="screen">
+  <div class="box" style="width:440px">
+    <div style="font-size:36px;margin-bottom:14px">🛡</div>
+    <h1>Admin Sign In</h1>
+    <p class="sub">Enter your admin credentials to access the control panel.</p>
+
+    <div class="mg">
+      <label>Username</label>
+      <input id="login-user" type="text" placeholder="Your admin username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="mg">
+      <label>Password</label>
+      <input id="login-pwd" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <div id="login-alert" class="alert a-err"></div>
+
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">
+      🔓 Sign In to Admin Panel
+    </button>
+
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn-link" onclick="toggleForgot()">🔑 Forgot Password?</button>
+    </div>
+
+    <!-- Forgot Password inline section -->
+    <div id="forgot-section" style="display:none;margin-top:18px;border-top:1px solid var(--b1);padding-top:18px">
+      <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:4px">Reset Admin Password</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Enter your username and set a new password.</div>
+      <div class="mg">
+        <label>Username</label>
+        <input id="fp-user" type="text" placeholder="Your admin username">
+      </div>
+      <div class="mg">
+        <label>New Password</label>
+        <input id="fp-pwd" type="password" placeholder="Min 6 characters">
+      </div>
+      <div class="mg">
+        <label>Confirm New Password</label>
+        <input id="fp-pwd2" type="password" placeholder="Repeat new password">
+      </div>
+      <div id="fp-alert" class="alert a-err"></div>
+      <div id="fp-ok" class="alert a-ok"></div>
+      <button class="btn btn-primary btn-full" id="fp-btn" onclick="doForgotPassword()">🔄 Reset Password</button>
+    </div>
+
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn-link" onclick="doReset()">Change Supabase project / Reset credentials</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 4 — FULL DASHBOARD
+     ══════════════════════════════════════════ -->
+<div id="sc-dash" class="screen">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="brand">
+      <h2>🛡 ExamGuard</h2>
+      <small>Admin Control Panel</small>
+    </div>
+    <div class="nav">
+      <button class="nav-btn on"  onclick="goTab('dashboard',this)">📊&nbsp; Dashboard</button>
+      <button class="nav-btn"     onclick="goTab('students',this)">👤&nbsp; Students</button>
+      <button class="nav-btn"     onclick="goTab('faculty',this)">🎓&nbsp; Faculty</button>
+      <button class="nav-btn"     onclick="goTab('exams',this)">📋&nbsp; Exams</button>
+      <button class="nav-btn"     onclick="goTab('results',this)">📈&nbsp; Results</button>
+    </div>
+    <div class="sb-foot">
+      <div class="sb-user" id="sb-user">● Connected</div>
+      <button class="btn btn-full" style="font-size:12px" onclick="doLogout()">⎋&nbsp; Logout</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+
+    <!-- Dashboard tab -->
+    <div id="tab-dashboard" class="tab on">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Live overview of your ExamGuard system</div>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" style="color:var(--accent)"  id="d-sc">—</div><div class="stat-lbl">Students</div></div>
+        <div class="stat"><div class="stat-num" style="color:var(--green)"   id="d-fc">—</div><div class="stat-lbl">Faculty</div></div>
+        <div class="stat"><div class="stat-num" style="color:var(--yellow)"  id="d-ec">—</div><div class="stat-lbl">Exams</div></div>
+        <div class="stat"><div class="stat-num" style="color:var(--sub)"     id="d-rc">—</div><div class="stat-lbl">Submissions</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Recent Students</span><button class="btn btn-sm" onclick="loadDash()">↻</button></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Name</th><th>Email</th><th>Joined</th></tr></thead>
+            <tbody id="d-stu"></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Recent Results</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Date</th></tr></thead>
+            <tbody id="d-res"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students tab -->
+    <div id="tab-students" class="tab">
+      <div class="page-title">Students</div>
+      <div class="page-sub">Create and manage all student accounts — no self-registration in the app</div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">➕ Create New Student</span></div>
+        <div class="row2">
+          <div class="mg"><label>Full Name</label><input id="s-name" placeholder="Student full name"></div>
+          <div class="mg"><label>Email</label><input id="s-email" type="email" placeholder="student@email.com"></div>
+        </div>
+        <div class="row2">
+          <div class="mg"><label>Password</label><input id="s-pwd" type="password" placeholder="Min 6 characters"></div>
+          <div class="mg"><label>Confirm Password</label><input id="s-pwd2" type="password" placeholder="Repeat"></div>
+        </div>
+        <div id="s-alert" class="alert a-err"></div>
+        <div id="s-ok" class="alert a-ok"></div>
+        <button class="btn btn-primary" id="s-btn" onclick="createAccount('students','s')">✓ Create Student Account</button>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Students &nbsp;<span id="s-cnt" style="color:var(--sub);font-weight:400"></span></span>
+          <button class="btn btn-sm" onclick="loadStudents()">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="s-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+
+      <!-- Change Password for Student -->
+      <div class="card" id="s-chpwd-card" style="display:none">
+        <div class="card-head">
+          <span class="card-title">🔑 Change Password — <span id="s-chpwd-name" style="color:var(--accent)"></span></span>
+          <button class="btn btn-sm" onclick="closeChangePwd('s')">✕ Close</button>
+        </div>
+        <div class="row2">
+          <div class="mg">
+            <label>New Password</label>
+            <input id="s-chpwd-new" type="password" placeholder="Min 6 characters">
+          </div>
+          <div class="mg">
+            <label>Confirm New Password</label>
+            <input id="s-chpwd-confirm" type="password" placeholder="Repeat">
+          </div>
+        </div>
+        <div id="s-chpwd-alert" class="alert a-err"></div>
+        <div id="s-chpwd-ok" class="alert a-ok"></div>
+        <button class="btn btn-primary" id="s-chpwd-btn" onclick="doChangePwd('students','s')">🔄 Update Student Password</button>
+      </div>
+    </div>
+
+    <!-- Faculty tab -->
+    <div id="tab-faculty" class="tab">
+      <div class="page-title">Faculty</div>
+      <div class="page-sub">Create and manage all faculty accounts — no self-registration in the app</div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">➕ Create New Faculty</span></div>
+        <div class="row2">
+          <div class="mg"><label>Full Name</label><input id="f-name" placeholder="Faculty full name"></div>
+          <div class="mg"><label>Email</label><input id="f-email" type="email" placeholder="faculty@email.com"></div>
+        </div>
+        <div class="row2">
+          <div class="mg"><label>Password</label><input id="f-pwd" type="password" placeholder="Min 6 characters"></div>
+          <div class="mg"><label>Confirm Password</label><input id="f-pwd2" type="password" placeholder="Repeat"></div>
+        </div>
+        <div id="f-alert" class="alert a-err"></div>
+        <div id="f-ok" class="alert a-ok"></div>
+        <button class="btn btn-primary" id="f-btn" onclick="createAccount('faculty','f')">✓ Create Faculty Account</button>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Faculty &nbsp;<span id="f-cnt" style="color:var(--sub);font-weight:400"></span></span>
+          <button class="btn btn-sm" onclick="loadFaculty()">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="f-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+
+      <!-- Change Password for Faculty -->
+      <div class="card" id="f-chpwd-card" style="display:none">
+        <div class="card-head">
+          <span class="card-title">🔑 Change Password — <span id="f-chpwd-name" style="color:var(--accent)"></span></span>
+          <button class="btn btn-sm" onclick="closeChangePwd('f')">✕ Close</button>
+        </div>
+        <div class="row2">
+          <div class="mg">
+            <label>New Password</label>
+            <input id="f-chpwd-new" type="password" placeholder="Min 6 characters">
+          </div>
+          <div class="mg">
+            <label>Confirm New Password</label>
+            <input id="f-chpwd-confirm" type="password" placeholder="Repeat">
+          </div>
+        </div>
+        <div id="f-chpwd-alert" class="alert a-err"></div>
+        <div id="f-chpwd-ok" class="alert a-ok"></div>
+        <button class="btn btn-primary" id="f-chpwd-btn" onclick="doChangePwd('faculty','f')">🔄 Update Faculty Password</button>
+      </div>
+    </div>
+
+    <!-- Exams tab -->
+    <div id="tab-exams" class="tab">
+      <div class="page-title">Exams</div>
+      <div class="page-sub">View, activate, pause, or delete exams created by faculty</div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Exams</span>
+          <button class="btn btn-sm" onclick="loadExams()">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Title</th><th>Code</th><th>Duration</th><th>Questions</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="e-tbl"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- Results tab -->
+    <div id="tab-results" class="tab">
+      <div class="page-title">Results</div>
+      <div class="page-sub">All student exam submissions across the system</div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">All Results &nbsp;<span id="r-cnt" style="color:var(--sub);font-weight:400"></span></span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="loadResults()">↻ Refresh</button>
+            <button class="btn btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Student ID</th><th>Exam ID</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead>
+          <tbody id="r-tbl"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /dashboard -->
+
+<script>
+/* ══════════════════════════════════════════
+   GLOBALS
+══════════════════════════════════════════ */
+var G = { url: '', key: '', user: '' };
+var csvCache = [];
+
+/* ══════════════════════════════════════════
+   SCREEN SWITCHING
+══════════════════════════════════════════ */
+function show(id) {
+  ['sc-config','sc-setup','sc-login','sc-dash'].forEach(function(s) {
+    document.getElementById(s).className = 'screen' + (s === id ? ' on' : '');
+  });
+}
+
+function goTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.className = 'tab'; });
+  document.querySelectorAll('.nav-btn').forEach(function(b) { b.className = 'nav-btn'; });
+  document.getElementById('tab-' + id).className = 'tab on';
+  btn.className = 'nav-btn on';
+}
+
+/* ══════════════════════════════════════════
+   ALERT HELPERS
+══════════════════════════════════════════ */
+function setAlert(id, msg, type) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'alert ' + type + ' on';
+  if (type === 'a-ok') setTimeout(function() { el.className = 'alert a-ok'; }, 3000);
+}
+function clearAlert(id) { var el = document.getElementById(id); if (el) el.className = 'alert a-err'; }
+
+/* ══════════════════════════════════════════
+   DEBUG LOG
+══════════════════════════════════════════ */
+function dbg(msg) {
+  var el = document.getElementById('dbg');
+  if (el) el.textContent += new Date().toLocaleTimeString() + '  ' + msg + '\n';
+  console.log('[EG]', msg);
+}
+
+/* ══════════════════════════════════════════
+   SUPABASE REST HELPERS
+══════════════════════════════════════════ */
+async function sbGet(table, qs) {
+  var r = await fetch(G.url + '/rest/v1/' + table + (qs || ''), {
+    headers: { 'apikey': G.key, 'Authorization': 'Bearer ' + G.key }
+  });
+  var t = await r.text();
+  if (!r.ok) throw new Error(t);
+  return JSON.parse(t || '[]');
+}
+
+async function sbPost(table, data) {
+  var r = await fetch(G.url + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: {
+      'apikey': G.key, 'Authorization': 'Bearer ' + G.key,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  });
+  var t = await r.text();
+  if (!r.ok) throw new Error(t);
+  return JSON.parse(t || '[]');
+}
+
+async function sbDel(path) {
+  var r = await fetch(G.url + '/rest/v1/' + path, {
+    method: 'DELETE',
+    headers: { 'apikey': G.key, 'Authorization': 'Bearer ' + G.key }
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function sbPatch(table, id, data) {
+  var r = await fetch(G.url + '/rest/v1/' + table + '?id=eq.' + id, {
+    method: 'PATCH',
+    headers: { 'apikey': G.key, 'Authorization': 'Bearer ' + G.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+/* ══════════════════════════════════════════
+   PASSWORD HASHING  (PBKDF2-SHA256)
+   Matches Python auth_system.py exactly
+══════════════════════════════════════════ */
+async function hashPwd(pw) {
+  var enc = new TextEncoder();
+  var salt = crypto.getRandomValues(new Uint8Array(32));
+  var km = await crypto.subtle.importKey('raw', enc.encode(pw), { name: 'PBKDF2' }, false, ['deriveBits']);
+  var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 260000, hash: 'SHA-256' }, km, 256);
+  function hex(a) { return Array.from(new Uint8Array(a)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(''); }
+  return hex(salt) + ':' + hex(bits);
+}
+
+async function verifyPwd(pw, stored) {
+  try {
+    var parts = stored.split(':');
+    var salt = new Uint8Array(parts[0].match(/.{2}/g).map(function(b) { return parseInt(b, 16); }));
+    var enc = new TextEncoder();
+    var km = await crypto.subtle.importKey('raw', enc.encode(pw), { name: 'PBKDF2' }, false, ['deriveBits']);
+    var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 260000, hash: 'SHA-256' }, km, 256);
+    function hex(a) { return Array.from(new Uint8Array(a)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(''); }
+    return hex(bits) === parts[1];
+  } catch (e) { return false; }
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 1 — CONNECT TO SUPABASE
+══════════════════════════════════════════ */
+async function doConnect() {
+  clearAlert('cfg-alert');
+  var url = document.getElementById('cfg-url').value.trim().replace(/\/$/, '');
+  var key = document.getElementById('cfg-key').value.trim();
+
+  if (!url || !key) { setAlert('cfg-alert', 'Please enter both URL and Service Role Key.', 'a-err'); return; }
+  if (!url.startsWith('https://')) { setAlert('cfg-alert', 'URL must start with https://', 'a-err'); return; }
+
+  var btn = document.getElementById('cfg-btn');
+  btn.textContent = 'Connecting...'; btn.disabled = true;
+
+  G.url = url; G.key = key;
+  dbg('Connecting to: ' + url);
+
+  try {
+    var rows = await sbGet('admins', '?select=id&limit=1');
+    dbg('Connected! Admins found: ' + rows.length);
+    localStorage.setItem('eg_url', url);
+    localStorage.setItem('eg_key', key);
+
+    btn.textContent = 'Connected ✓'; 
+    setTimeout(function() {
+      if (rows.length === 0) { show('sc-setup'); }
+      else { show('sc-login'); }
+    }, 400);
+
+  } catch (e) {
+    dbg('Error: ' + e.message);
+    G.url = ''; G.key = '';
+    if (e.message.indexOf('42P01') > -1 || e.message.toLowerCase().indexOf('relation') > -1 || e.message.toLowerCase().indexOf('admins') > -1) {
+      setAlert('cfg-alert',
+        '⚠️ The "admins" table does not exist yet.\n\nGo to Supabase → SQL Editor → New Query → paste and click Run:\n\nCREATE TABLE admins (\n  id SERIAL PRIMARY KEY,\n  username TEXT UNIQUE NOT NULL,\n  password_hash TEXT NOT NULL,\n  created_at TIMESTAMP DEFAULT NOW()\n);',
+        'a-err'
+      );
+    } else {
+      setAlert('cfg-alert', 'Connection failed:\n' + e.message, 'a-err');
+    }
+    btn.textContent = 'Connect to Supabase →'; btn.disabled = false;
+  }
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 2 — CREATE ADMIN (first time)
+══════════════════════════════════════════ */
+async function doSetup() {
+  clearAlert('setup-alert');
+  var u = document.getElementById('setup-user').value.trim().toLowerCase();
+  var p = document.getElementById('setup-pwd').value;
+  var p2 = document.getElementById('setup-pwd2').value;
+
+  if (!u || !p) { setAlert('setup-alert', 'All fields are required.', 'a-err'); return; }
+  if (p !== p2) { setAlert('setup-alert', 'Passwords do not match.', 'a-err'); return; }
+  if (p.length < 6) { setAlert('setup-alert', 'Password must be at least 6 characters.', 'a-err'); return; }
+
+  var btn = document.getElementById('setup-btn');
+  btn.textContent = 'Creating...'; btn.disabled = true;
+
+  try {
+    var hash = await hashPwd(p);
+    await sbPost('admins', { username: u, password_hash: hash });
+    setAlert('setup-ok', '✓ Admin account created! Taking you to login...', 'a-ok');
+    setTimeout(function() { show('sc-login'); }, 1500);
+  } catch (e) {
+    setAlert('setup-alert', 'Error: ' + e.message, 'a-err');
+    btn.textContent = 'Create Admin Account →'; btn.disabled = false;
+  }
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 3 — LOGIN
+══════════════════════════════════════════ */
+async function doLogin() {
+  clearAlert('login-alert');
+  var u = document.getElementById('login-user').value.trim().toLowerCase();
+  var p = document.getElementById('login-pwd').value;
+
+  if (!u || !p) { setAlert('login-alert', 'Please enter your username and password.', 'a-err'); return; }
+
+  var btn = document.getElementById('login-btn');
+  btn.textContent = 'Verifying...'; btn.disabled = true;
+
+  try {
+    var rows = await sbGet('admins', '?username=eq.' + encodeURIComponent(u) + '&select=id,username,password_hash');
+
+    if (rows.length === 0) {
+      setAlert('login-alert', 'Username not found.', 'a-err');
+      btn.textContent = '🔓 Sign In to Admin Panel'; btn.disabled = false;
+      return;
+    }
+
+    var ok = await verifyPwd(p, rows[0].password_hash);
+    if (!ok) {
+      setAlert('login-alert', 'Incorrect password. Please try again.', 'a-err');
+      btn.textContent = '🔓 Sign In to Admin Panel'; btn.disabled = false;
+      return;
+    }
+
+    // ✅ Login success
+    G.user = u;
+    document.getElementById('sb-user').textContent = '● Logged in as ' + u;
+    show('sc-dash');
+    loadAll();
+
+  } catch (e) {
+    setAlert('login-alert', 'Error: ' + e.message, 'a-err');
+    btn.textContent = '🔓 Sign In to Admin Panel'; btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  G.user = '';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pwd').value = '';
+  show('sc-login');
+}
+
+function doReset() {
+  if (!confirm('This will clear saved Supabase credentials and return to setup.\nContinue?')) return;
+  localStorage.removeItem('eg_url');
+  localStorage.removeItem('eg_key');
+  G.url = ''; G.key = '';
+  document.getElementById('cfg-url').value = '';
+  document.getElementById('cfg-key').value = '';
+  document.getElementById('cfg-btn').textContent = 'Connect to Supabase →';
+  document.getElementById('cfg-btn').disabled = false;
+  clearAlert('cfg-alert');
+  show('sc-config');
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD DATA
+══════════════════════════════════════════ */
+function loadAll() {
+  loadDash();
+  loadStudents();
+  loadFaculty();
+  loadExams();
+  loadResults();
+}
+
+function fmtDate(d) { return d ? String(d).slice(0, 10) : '—'; }
+function fmtPct(p) { return Math.round(p * 10) / 10 + '%'; }
+function pctBadge(p) {
+  return '<span class="badge ' + (p >= 80 ? 'b-green' : p >= 60 ? 'b-blue' : 'b-red') + '">' + fmtPct(p) + '</span>';
+}
+
+async function loadDash() {
+  try {
+    var counts = await Promise.all([
+      sbGet('students', '?select=count'),
+      sbGet('faculty',  '?select=count'),
+      sbGet('exams',    '?select=count'),
+      sbGet('results',  '?select=count'),
+    ]);
+    document.getElementById('d-sc').textContent = counts[0][0]?.count ?? 0;
+    document.getElementById('d-fc').textContent = counts[1][0]?.count ?? 0;
+    document.getElementById('d-ec').textContent = counts[2][0]?.count ?? 0;
+    document.getElementById('d-rc').textContent = counts[3][0]?.count ?? 0;
+
+    var stu = await sbGet('students', '?select=name,email,created_at&order=created_at.desc&limit=5');
+    document.getElementById('d-stu').innerHTML = stu.length
+      ? stu.map(function(s) { return '<tr><td>' + s.name + '</td><td style="color:var(--sub)">' + s.email + '</td><td>' + fmtDate(s.created_at) + '</td></tr>'; }).join('')
+      : '<tr><td colspan="3" class="empty">No students yet</td></tr>';
+
+    var res = await sbGet('results', '?select=student_id,exam_id,percentage,submitted_at&order=submitted_at.desc&limit=5');
+    document.getElementById('d-res').innerHTML = res.length
+      ? res.map(function(r) { return '<tr><td>#' + r.student_id + '</td><td>#' + r.exam_id + '</td><td>' + pctBadge(r.percentage) + '</td><td>' + fmtDate(r.submitted_at) + '</td></tr>'; }).join('')
+      : '<tr><td colspan="4" class="empty">No results yet</td></tr>';
+  } catch (e) { console.error(e); }
+}
+
+async function loadStudents() {
+  try {
+    var rows = await sbGet('students', '?select=id,name,email,created_at&order=created_at.desc');
+    document.getElementById('s-cnt').textContent = '(' + rows.length + ')';
+    document.getElementById('s-tbl').innerHTML = rows.length
+      ? rows.map(function(r, i) {
+          return '<tr><td style="color:var(--muted)">' + (i+1) + '</td><td><strong style="color:var(--white)">' + r.name + '</strong></td><td style="color:var(--sub)">' + r.email + '</td><td>' + fmtDate(r.created_at) + '</td><td style="display:flex;gap:6px"><button class="btn btn-sm" style="border-color:var(--accent);color:var(--accent)" onclick="openChangePwd(\'students\',\'s\',' + r.id + ',\'' + escStr(r.name) + '\')">🔑 Pwd</button><button class="btn btn-sm btn-danger" onclick="delRow(\'students\',' + r.id + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" class="empty">No students yet. Create one above.</td></tr>';
+  } catch (e) { console.error(e); }
+}
+
+async function loadFaculty() {
+  try {
+    var rows = await sbGet('faculty', '?select=id,name,email,created_at&order=created_at.desc');
+    document.getElementById('f-cnt').textContent = '(' + rows.length + ')';
+    document.getElementById('f-tbl').innerHTML = rows.length
+      ? rows.map(function(r, i) {
+          return '<tr><td style="color:var(--muted)">' + (i+1) + '</td><td><strong style="color:var(--white)">' + r.name + '</strong></td><td style="color:var(--sub)">' + r.email + '</td><td>' + fmtDate(r.created_at) + '</td><td style="display:flex;gap:6px"><button class="btn btn-sm" style="border-color:var(--accent);color:var(--accent)" onclick="openChangePwd(\'faculty\',\'f\',' + r.id + ',\'' + escStr(r.name) + '\')">🔑 Pwd</button><button class="btn btn-sm btn-danger" onclick="delRow(\'faculty\',' + r.id + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" class="empty">No faculty yet. Create one above.</td></tr>';
+  } catch (e) { console.error(e); }
+}
+
+async function loadExams() {
+  try {
+    var rows = await sbGet('exams', '?select=id,title,exam_code,duration_minutes,is_active&order=created_at.desc');
+    var qc = await Promise.all(rows.map(function(r) { return sbGet('questions', '?exam_id=eq.' + r.id + '&select=count'); }));
+    document.getElementById('e-tbl').innerHTML = rows.length
+      ? rows.map(function(r, i) {
+          var act = r.is_active;
+          return '<tr><td><strong style="color:var(--white)">' + r.title + '</strong></td><td><code>' + r.exam_code + '</code></td><td>' + r.duration_minutes + ' min</td><td><span class="badge b-blue">' + (qc[i][0]?.count ?? 0) + ' Qs</span></td><td><span class="badge ' + (act ? 'b-green' : 'b-red') + '">' + (act ? 'Active' : 'Inactive') + '</span></td><td style="display:flex;gap:6px"><button class="btn btn-sm ' + (act ? 'btn-danger' : 'btn-success') + '" onclick="toggleExam(' + r.id + ',' + act + ')">' + (act ? 'Pause' : 'Activate') + '</button><button class="btn btn-sm btn-danger" onclick="deleteExam(' + r.id + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="6" class="empty">No exams yet.</td></tr>';
+  } catch (e) { console.error(e); }
+}
+
+async function loadResults() {
+  try {
+    var rows = await sbGet('results', '?select=id,student_id,exam_id,score,total_questions,percentage,submitted_at&order=submitted_at.desc');
+    csvCache = rows;
+    document.getElementById('r-cnt').textContent = '(' + rows.length + ')';
+    document.getElementById('r-tbl').innerHTML = rows.length
+      ? rows.map(function(r) {
+          return '<tr><td>Student #' + r.student_id + '</td><td>Exam #' + r.exam_id + '</td><td>' + r.score + ' / ' + r.total_questions + '</td><td>' + pctBadge(r.percentage) + '</td><td style="color:var(--sub)">' + fmtDate(r.submitted_at) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" class="empty">No results yet.</td></tr>';
+  } catch (e) { console.error(e); }
+}
+
+/* ══════════════════════════════════════════
+   CREATE ACCOUNTS
+══════════════════════════════════════════ */
+async function createAccount(table, prefix) {
+  clearAlert(prefix + '-alert');
+  var name  = document.getElementById(prefix + '-name').value.trim();
+  var email = document.getElementById(prefix + '-email').value.trim().toLowerCase();
+  var pwd   = document.getElementById(prefix + '-pwd').value;
+  var pwd2  = document.getElementById(prefix + '-pwd2').value;
+
+  if (!name || !email || !pwd) { setAlert(prefix + '-alert', 'All fields are required.', 'a-err'); return; }
+  if (pwd !== pwd2)             { setAlert(prefix + '-alert', 'Passwords do not match.', 'a-err'); return; }
+  if (pwd.length < 6)           { setAlert(prefix + '-alert', 'Password must be at least 6 characters.', 'a-err'); return; }
+
+  var btn = document.getElementById(prefix + '-btn');
+  var label = table === 'students' ? 'Student' : 'Faculty';
+  btn.textContent = 'Creating...'; btn.disabled = true;
+
+  try {
+    var hash = await hashPwd(pwd);
+    await sbPost(table, { name: name, email: email, password_hash: hash });
+    setAlert(prefix + '-ok', '✓ ' + label + ' account for "' + name + '" created successfully!', 'a-ok');
+    ['name','email','pwd','pwd2'].forEach(function(f) { document.getElementById(prefix + '-' + f).value = ''; });
+    if (table === 'students') loadStudents(); else loadFaculty();
+    loadDash();
+  } catch (e) {
+    var msg = (e.message.indexOf('unique') > -1 || e.message.indexOf('duplicate') > -1)
+      ? 'Email "' + email + '" already exists.'
+      : 'Error: ' + e.message;
+    setAlert(prefix + '-alert', msg, 'a-err');
+  }
+
+  btn.textContent = '✓ Create ' + label + ' Account'; btn.disabled = false;
+}
+
+/* ══════════════════════════════════════════
+   DELETE / TOGGLE
+══════════════════════════════════════════ */
+async function delRow(table, id) {
+  if (!confirm('Delete this account permanently?\nThis cannot be undone.')) return;
+  try {
+    await sbDel(table + '?id=eq.' + id);
+    if (table === 'students') loadStudents(); else loadFaculty();
+    loadDash();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function toggleExam(id, cur) {
+  try {
+    await sbPatch('exams', id, { is_active: !cur });
+    loadExams();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function deleteExam(id) {
+  if (!confirm('Delete this exam and all its questions?\nStudent results will be kept.\nThis cannot be undone.')) return;
+  try {
+    await sbDel('questions?exam_id=eq.' + id);
+    await sbDel('exams?id=eq.' + id);
+    loadExams(); loadDash();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function exportCSV() {
+  if (!csvCache.length) { alert('No results to export.'); return; }
+  var lines = ['Student ID,Exam ID,Score,Total,Percentage,Date'];
+  csvCache.forEach(function(r) { lines.push(r.student_id + ',' + r.exam_id + ',' + r.score + ',' + r.total_questions + ',' + r.percentage + ',' + fmtDate(r.submitted_at)); });
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(lines.join('\n'));
+  a.download = 'examguard_results.csv';
+  a.click();
+}
+
+/* ══════════════════════════════════════════
+   FORGOT PASSWORD (Admin)
+══════════════════════════════════════════ */
+function toggleForgot() {
+  var sec = document.getElementById('forgot-section');
+  sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+  clearAlert('fp-alert');
+  clearAlert('fp-ok');
+  document.getElementById('fp-user').value = '';
+  document.getElementById('fp-pwd').value = '';
+  document.getElementById('fp-pwd2').value = '';
+}
+
+async function doForgotPassword() {
+  clearAlert('fp-alert');
+  clearAlert('fp-ok');
+  var u   = document.getElementById('fp-user').value.trim().toLowerCase();
+  var p   = document.getElementById('fp-pwd').value;
+  var p2  = document.getElementById('fp-pwd2').value;
+
+  if (!u || !p || !p2)  { setAlert('fp-alert', 'All fields are required.', 'a-err'); return; }
+  if (p !== p2)          { setAlert('fp-alert', 'Passwords do not match.', 'a-err'); return; }
+  if (p.length < 6)      { setAlert('fp-alert', 'Password must be at least 6 characters.', 'a-err'); return; }
+
+  var btn = document.getElementById('fp-btn');
+  btn.textContent = 'Resetting...'; btn.disabled = true;
+
+  try {
+    var rows = await sbGet('admins', '?username=eq.' + encodeURIComponent(u) + '&select=id');
+    if (rows.length === 0) {
+      setAlert('fp-alert', 'No admin account found with that username.', 'a-err');
+      btn.textContent = '🔄 Reset Password'; btn.disabled = false;
+      return;
+    }
+    var hash = await hashPwd(p);
+    await sbPatch('admins', rows[0].id, { password_hash: hash });
+    setAlert('fp-ok', '✓ Password reset successfully! You can now sign in with your new password.', 'a-ok');
+    document.getElementById('fp-pwd').value = '';
+    document.getElementById('fp-pwd2').value = '';
+    setTimeout(function() { document.getElementById('forgot-section').style.display = 'none'; }, 3000);
+  } catch (e) {
+    setAlert('fp-alert', 'Error: ' + e.message, 'a-err');
+  }
+
+  btn.textContent = '🔄 Reset Password'; btn.disabled = false;
+}
+
+/* ══════════════════════════════════════════
+   CHANGE PASSWORD — Student / Faculty
+══════════════════════════════════════════ */
+var chpwdTarget = { table: '', prefix: '', id: null };
+
+function escStr(s) { return String(s).replace(/'/g, "\\'"); }
+
+function openChangePwd(table, prefix, id, name) {
+  chpwdTarget = { table: table, prefix: prefix, id: id };
+  document.getElementById(prefix + '-chpwd-name').textContent = name;
+  document.getElementById(prefix + '-chpwd-new').value = '';
+  document.getElementById(prefix + '-chpwd-confirm').value = '';
+  clearAlert(prefix + '-chpwd-alert');
+  clearAlert(prefix + '-chpwd-ok');
+  var card = document.getElementById(prefix + '-chpwd-card');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeChangePwd(prefix) {
+  document.getElementById(prefix + '-chpwd-card').style.display = 'none';
+  chpwdTarget = { table: '', prefix: '', id: null };
+}
+
+async function doChangePwd(table, prefix) {
+  clearAlert(prefix + '-chpwd-alert');
+  clearAlert(prefix + '-chpwd-ok');
+  var p  = document.getElementById(prefix + '-chpwd-new').value;
+  var p2 = document.getElementById(prefix + '-chpwd-confirm').value;
+
+  if (!p || !p2)   { setAlert(prefix + '-chpwd-alert', 'Both password fields are required.', 'a-err'); return; }
+  if (p !== p2)     { setAlert(prefix + '-chpwd-alert', 'Passwords do not match.', 'a-err'); return; }
+  if (p.length < 6) { setAlert(prefix + '-chpwd-alert', 'Password must be at least 6 characters.', 'a-err'); return; }
+
+  var btn = document.getElementById(prefix + '-chpwd-btn');
+  btn.textContent = 'Updating...'; btn.disabled = true;
+
+  try {
+    var hash = await hashPwd(p);
+    await sbPatch(table, chpwdTarget.id, { password_hash: hash });
+    setAlert(prefix + '-chpwd-ok', '✓ Password updated successfully!', 'a-ok');
+    document.getElementById(prefix + '-chpwd-new').value = '';
+    document.getElementById(prefix + '-chpwd-confirm').value = '';
+    setTimeout(function() { closeChangePwd(prefix); }, 2000);
+  } catch (e) {
+    setAlert(prefix + '-chpwd-alert', 'Error: ' + e.message, 'a-err');
+  }
+
+  btn.textContent = '🔄 Update ' + (table === 'students' ? 'Student' : 'Faculty') + ' Password'; btn.disabled = false;
+}
+
+/* ══════════════════════════════════════════
+   STARTUP — auto-connect if credentials saved
+══════════════════════════════════════════ */
+window.addEventListener('load', async function() {
+  var savedUrl = localStorage.getItem('eg_url');
+  var savedKey = localStorage.getItem('eg_key');
+
+  // Pre-fill config form
+  if (savedUrl) document.getElementById('cfg-url').value = savedUrl;
+  if (savedKey) document.getElementById('cfg-key').value = savedKey;
+
+  if (!savedUrl || !savedKey) {
+    dbg('No saved credentials — showing config screen.');
+    show('sc-config');
+    return;
+  }
+
+  G.url = savedUrl; G.key = savedKey;
+  dbg('Found saved credentials — auto-connecting...');
+
+  try {
+    var rows = await sbGet('admins', '?select=id&limit=1');
+    dbg('Auto-connect OK. Admins: ' + rows.length);
+    if (rows.length === 0) { show('sc-setup'); }
+    else { show('sc-login'); }
+  } catch (e) {
+    dbg('Auto-connect failed: ' + e.message + ' — showing config screen.');
+    G.url = ''; G.key = '';
+    show('sc-config');
+  }
+});
+</script>
+</body>
+</html>
